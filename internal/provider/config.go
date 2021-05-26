@@ -142,12 +142,6 @@ type Data struct {
 	DockerImages map[string]*types.ImageSummary
 }
 
-// ProviderConfig for the custom registry provider
-type ProviderConfig struct {
-	DockerClient *client.Client
-	AuthConfigs  *AuthConfigs
-}
-
 // The registry address can be referenced in various places (registry auth, docker config file, image name)
 // with or without the http(s):// prefix; this function is used to standardize the inputs
 func normalizeRegistryAddress(address string) string {

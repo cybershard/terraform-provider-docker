@@ -22,7 +22,12 @@ import (
 )
 
 func resourceDockerImageCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ProviderConfig).DockerClient
+	clientConfig, err := getOrCreateDockerClient(d, meta.(map[string]*ClientConfig))
+	if err != nil {
+		diag.FromErr(err)
+	}
+	client := clientConfig.dockerClient
+
 	imageName := d.Get("name").(string)
 
 	if value, ok := d.GetOk("build"); ok {
@@ -35,7 +40,7 @@ func resourceDockerImageCreate(ctx context.Context, d *schema.ResourceData, meta
 			}
 		}
 	}
-	apiImage, err := findImage(ctx, imageName, client, meta.(*ProviderConfig).AuthConfigs)
+	apiImage, err := findImage(ctx, imageName, client, clientConfig.getAuthConfig())
 	if err != nil {
 		return diag.Errorf("Unable to read Docker image into resource: %s", err)
 	}
@@ -45,7 +50,12 @@ func resourceDockerImageCreate(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceDockerImageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ProviderConfig).DockerClient
+	clientConfig, err := getOrCreateDockerClient(d, meta.(map[string]*ClientConfig))
+	if err != nil {
+		diag.FromErr(err)
+	}
+	client := clientConfig.dockerClient
+
 	var data Data
 	if err := fetchLocalImages(ctx, &data, client); err != nil {
 		return diag.Errorf("Error reading docker image list: %s", err)
@@ -71,9 +81,14 @@ func resourceDockerImageRead(ctx context.Context, d *schema.ResourceData, meta i
 func resourceDockerImageUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// We need to re-read in case switching parameters affects
 	// the value of "latest" or others
-	client := meta.(*ProviderConfig).DockerClient
+	clientConfig, err := getOrCreateDockerClient(d, meta.(map[string]*ClientConfig))
+	if err != nil {
+		diag.FromErr(err)
+	}
+	client := clientConfig.dockerClient
+
 	imageName := d.Get("name").(string)
-	apiImage, err := findImage(ctx, imageName, client, meta.(*ProviderConfig).AuthConfigs)
+	apiImage, err := findImage(ctx, imageName, client, clientConfig.getAuthConfig())
 	if err != nil {
 		return diag.Errorf("Unable to read Docker image into resource: %s", err)
 	}
@@ -84,7 +99,12 @@ func resourceDockerImageUpdate(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceDockerImageDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*ProviderConfig).DockerClient
+	clientConfig, err := getOrCreateDockerClient(d, meta.(map[string]*ClientConfig))
+	if err != nil {
+		diag.FromErr(err)
+	}
+	client := clientConfig.dockerClient
+
 	err := removeImage(ctx, d, client)
 	if err != nil {
 		return diag.Errorf("Unable to remove Docker image: %s", err)
@@ -165,20 +185,13 @@ func fetchLocalImages(ctx context.Context, data *Data, client *client.Client) er
 	return nil
 }
 
-func pullImage(ctx context.Context, data *Data, client *client.Client, authConfig *AuthConfigs, image string) error {
+func pullImage(ctx context.Context, data *Data, client *client.Client, authConfig *types.AuthConfig, image string) error {
 	pullOpts := parseImageOptions(image)
 
 	// If a registry was specified in the image name, try to find auth for it
 	auth := types.AuthConfig{}
-	if pullOpts.Registry != "" {
-		if authConfig, ok := authConfig.Configs[normalizeRegistryAddress(pullOpts.Registry)]; ok {
-			auth = authConfig
-		}
-	} else {
-		// Try to find an auth config for the public docker hub if a registry wasn't given
-		if authConfig, ok := authConfig.Configs["https://registry.hub.docker.com"]; ok {
-			auth = authConfig
-		}
+	if pullOpts.Registry == convertToHostname(authConfig.ServerAddress) {
+		auth = *authConfig
 	}
 
 	encodedJSON, err := json.Marshal(auth)
@@ -245,7 +258,7 @@ func parseImageOptions(image string) internalPullImageOptions {
 	return pullOpts
 }
 
-func findImage(ctx context.Context, imageName string, client *client.Client, authConfig *AuthConfigs) (*types.ImageSummary, error) {
+func findImage(ctx context.Context, imageName string, client *client.Client, authConfig *types.AuthConfig) (*types.ImageSummary, error) {
 	if imageName == "" {
 		return nil, fmt.Errorf("empty image name is not allowed")
 	}

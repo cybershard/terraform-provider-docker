@@ -142,6 +142,24 @@ type Data struct {
 	DockerImages map[string]*types.ImageSummary
 }
 
+// ConvertToHostname converts a registry url which has http|https prepended
+// to just an hostname.
+// Copied from github.com/docker/docker/registry.ConvertToHostname to reduce dependencies.
+func convertToHostname(url string) string {
+	stripped := url
+	// DevSkim: ignore DS137138
+	if strings.HasPrefix(url, "http://") {
+		// DevSkim: ignore DS137138
+		stripped = strings.TrimPrefix(url, "http://")
+	} else if strings.HasPrefix(url, "https://") {
+		stripped = strings.TrimPrefix(url, "https://")
+	}
+
+	nameParts := strings.SplitN(stripped, "/", 2)
+
+	return nameParts[0]
+}
+
 // The registry address can be referenced in various places (registry auth, docker config file, image name)
 // with or without the http(s):// prefix; this function is used to standardize the inputs
 func normalizeRegistryAddress(address string) string {

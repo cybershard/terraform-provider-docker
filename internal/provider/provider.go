@@ -27,26 +27,27 @@ func New(version string) func() *schema.Provider {
 	return func() *schema.Provider {
 		p := &schema.Provider{
 			ResourcesMap: map[string]*schema.Resource{
-				"docker_container":      resourceDockerContainer(),
+				//"docker_container":      resourceDockerContainer(),
 				"docker_image":          resourceDockerImage(),
-				"docker_registry_image": resourceDockerRegistryImage(),
-				"docker_network":        resourceDockerNetwork(),
-				"docker_volume":         resourceDockerVolume(),
-				"docker_config":         resourceDockerConfig(),
-				"docker_secret":         resourceDockerSecret(),
-				"docker_service":        resourceDockerService(),
-				"docker_plugin":         resourceDockerPlugin(),
+				//"docker_registry_image": resourceDockerRegistryImage(),
+				//"docker_network":        resourceDockerNetwork(),
+				//"docker_volume":         resourceDockerVolume(),
+				//"docker_config":         resourceDockerConfig(),
+				//"docker_secret":         resourceDockerSecret(),
+				//"docker_service":        resourceDockerService(),
+				//"docker_plugin":         resourceDockerPlugin(),
 			},
 
-			DataSourcesMap: map[string]*schema.Resource{
-				"docker_registry_image": dataSourceDockerRegistryImage(),
-				"docker_network":        dataSourceDockerNetwork(),
-				"docker_plugin":         dataSourceDockerPlugin(),
-			},
+			//DataSourcesMap: map[string]*schema.Resource{
+				//"docker_registry_image": dataSourceDockerRegistryImage(),
+				//"docker_network":        dataSourceDockerNetwork(),
+				//"docker_plugin":         dataSourceDockerPlugin(),
+			//},
 		}
 
 		p.ConfigureContextFunc = func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-			return make(map[string]*ClientConfig), nil
+			hostMap := make(map[string]*ClientConfig)
+			return &hostMap, nil
 		}
 
 		return p

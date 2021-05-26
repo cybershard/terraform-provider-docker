@@ -35,6 +35,7 @@ func resourceDockerContainer() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"client": generateClientSchema(),
 			"name": {
 				Type:        schema.TypeString,
 				Description: "The name of the container.",

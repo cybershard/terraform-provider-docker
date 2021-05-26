@@ -4,7 +4,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"strings"
 )
 
 type ClientConfig struct {
@@ -23,9 +22,12 @@ func (c *ClientConfig) getAuthConfig() *types.AuthConfig {
 	}
 }
 
-func getOrCreateDockerClient(d *schema.ResourceData, meta map[string]*ClientConfig) (*ClientConfig, error) {
-	hostUri := d.Get("client.host").(string)
-	if clientConfig, ok := meta[hostUri]; ok {
+func getOrCreateDockerClient(d *schema.ResourceData, meta *map[string]*ClientConfig) (*ClientConfig, error) {
+	configs := *meta
+	c := d.Get("client").([]interface{})[0].(map[string]interface{})
+	hostUri := c["host"].(string)
+
+	if clientConfig, ok := configs[hostUri]; ok {
 		return clientConfig, nil
 	} else {
 		config := Config{
@@ -38,24 +40,24 @@ func getOrCreateDockerClient(d *schema.ResourceData, meta map[string]*ClientConf
 		}
 
 		clientConfig := ClientConfig{
-			host:             d.Get("client.host").(string),
-			registryAddress:  d.Get("client.registry_address").(string),
-			registryUsername: d.Get("client.registry_username").(string),
-			registryPassword: d.Get("client.registry_password").(string),
+			host:             hostUri,
+			registryAddress:  c["registry_address"].(string),
+			registryUsername: c["registry_username"].(string),
+			registryPassword: c["registry_password"].(string),
 			dockerClient: dockerClient,
 		}
 
-		meta[hostUri] = &clientConfig
+		configs[hostUri] = &clientConfig
 		return &clientConfig, err
 	}
 }
 
 func generateClientSchema() *schema.Schema {
 	return &schema.Schema {
-		Type:          schema.TypeSet,
+		Type:     schema.TypeList,
 		Description:   "Configuration for Docker API client",
-		Optional:      false,
-		MaxItems:      1,
+		Required: true,
+		MaxItems: 1,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"host": {
@@ -87,24 +89,6 @@ func generateClientSchema() *schema.Schema {
 			},
 		},
 	}
-}
-
-// ConvertToHostname converts a registry url which has http|https prepended
-// to just an hostname.
-// Copied from github.com/docker/docker/registry.ConvertToHostname to reduce dependencies.
-func convertToHostname(url string) string {
-	stripped := url
-	// DevSkim: ignore DS137138
-	if strings.HasPrefix(url, "http://") {
-		// DevSkim: ignore DS137138
-		stripped = strings.TrimPrefix(url, "http://")
-	} else if strings.HasPrefix(url, "https://") {
-		stripped = strings.TrimPrefix(url, "https://")
-	}
-
-	nameParts := strings.SplitN(stripped, "/", 2)
-
-	return nameParts[0]
 }
 
 

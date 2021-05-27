@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"sync"
 )
 
 func init() {
@@ -27,7 +28,7 @@ func New(version string) func() *schema.Provider {
 	return func() *schema.Provider {
 		p := &schema.Provider{
 			ResourcesMap: map[string]*schema.Resource{
-				//"docker_container":      resourceDockerContainer(),
+				"docker_container":      resourceDockerContainer(),
 				"docker_image":          resourceDockerImage(),
 				//"docker_registry_image": resourceDockerRegistryImage(),
 				//"docker_network":        resourceDockerNetwork(),
@@ -46,10 +47,18 @@ func New(version string) func() *schema.Provider {
 		}
 
 		p.ConfigureContextFunc = func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-			hostMap := make(map[string]*ClientConfig)
+			hostMap := ProviderConfig{
+				mutex:   sync.RWMutex{},
+				clients: make(map[string]*ClientConfig),
+			}
 			return &hostMap, nil
 		}
 
 		return p
 	}
+}
+
+type ProviderConfig struct {
+	mutex sync.RWMutex
+	clients map[string]*ClientConfig
 }

@@ -22,7 +22,7 @@ import (
 )
 
 func resourceDockerImageCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	clientConfig, err := getOrCreateDockerClient(d, meta.(*map[string]*ClientConfig))
+	clientConfig, err := getOrCreateDockerClient(d, meta.(*ProviderConfig))
 	if err != nil {
 		diag.FromErr(err)
 	}
@@ -50,7 +50,7 @@ func resourceDockerImageCreate(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceDockerImageRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	clientConfig, err := getOrCreateDockerClient(d, meta.(*map[string]*ClientConfig))
+	clientConfig, err := getOrCreateDockerClient(d, meta.(*ProviderConfig))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -82,7 +82,7 @@ func resourceDockerImageRead(ctx context.Context, d *schema.ResourceData, meta i
 func resourceDockerImageUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// We need to re-read in case switching parameters affects
 	// the value of "latest" or others
-	clientConfig, err := getOrCreateDockerClient(d, meta.(*map[string]*ClientConfig))
+	clientConfig, err := getOrCreateDockerClient(d, meta.(*ProviderConfig))
 	if err != nil {
 		diag.FromErr(err)
 	}
@@ -100,7 +100,7 @@ func resourceDockerImageUpdate(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceDockerImageDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	clientConfig, err := getOrCreateDockerClient(d, meta.(*map[string]*ClientConfig))
+	clientConfig, err := getOrCreateDockerClient(d, meta.(*ProviderConfig))
 	if err != nil {
 		diag.FromErr(err)
 	}

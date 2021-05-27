@@ -47,7 +47,7 @@ var creationTime time.Time
 func resourceDockerContainerCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var err error
 
-	clientConfig, err := getOrCreateDockerClient(d, meta.(*map[string]*ClientConfig))
+	clientConfig, err := getOrCreateDockerClient(d, meta.(*ProviderConfig))
 	if err != nil {
 		diag.FromErr(err)
 	}
@@ -541,7 +541,7 @@ func resourceDockerContainerCreate(ctx context.Context, d *schema.ResourceData, 
 func resourceDockerContainerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[INFO] Waiting for container: '%s' to run: max '%v seconds'", d.Id(), containerReadRefreshTimeout)
 
-	clientConfig, err := getOrCreateDockerClient(d, meta.(*map[string]*ClientConfig))
+	clientConfig, err := getOrCreateDockerClient(d, meta.(*ProviderConfig))
 	if err != nil {
 		diag.FromErr(err)
 	}
@@ -729,7 +729,7 @@ func resourceDockerContainerRead(ctx context.Context, d *schema.ResourceData, me
 func resourceDockerContainerReadRefreshFunc(ctx context.Context,
 	d *schema.ResourceData, meta interface{}) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
-		clientConfig, err := getOrCreateDockerClient(d, meta.(*map[string]*ClientConfig))
+		clientConfig, err := getOrCreateDockerClient(d, meta.(*ProviderConfig))
 		if err != nil {
 			diag.FromErr(err)
 		}
@@ -808,7 +808,7 @@ func resourceDockerContainerUpdate(ctx context.Context, d *schema.ResourceData, 
 				updateConfig.Resources.MemorySwap = a
 			}
 
-			clientConfig, err := getOrCreateDockerClient(d, meta.(*map[string]*ClientConfig))
+			clientConfig, err := getOrCreateDockerClient(d, meta.(*ProviderConfig))
 			if err != nil {
 				diag.FromErr(err)
 			}
@@ -825,7 +825,7 @@ func resourceDockerContainerUpdate(ctx context.Context, d *schema.ResourceData, 
 }
 
 func resourceDockerContainerDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	clientConfig, err := getOrCreateDockerClient(d, meta.(*map[string]*ClientConfig))
+	clientConfig, err := getOrCreateDockerClient(d, meta.(*ProviderConfig))
 	if err != nil {
 		diag.FromErr(err)
 	}

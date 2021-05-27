@@ -22,14 +22,16 @@ func (c *ClientConfig) getAuthConfig() *types.AuthConfig {
 	}
 }
 
-func getOrCreateDockerClient(d *schema.ResourceData, meta *map[string]*ClientConfig) (*ClientConfig, error) {
-	configs := *meta
+func getOrCreateDockerClient(d *schema.ResourceData, meta *ProviderConfig) (*ClientConfig, error) {
 	c := d.Get("client").([]interface{})[0].(map[string]interface{})
 	hostUri := c["host"].(string)
 
-	if clientConfig, ok := configs[hostUri]; ok {
+	if clientConfig, ok := meta.clients[hostUri]; ok {
 		return clientConfig, nil
 	} else {
+		meta.mutex.Lock()
+		defer meta.mutex.Unlock()
+
 		config := Config{
 			Host: hostUri,
 		}
@@ -47,7 +49,7 @@ func getOrCreateDockerClient(d *schema.ResourceData, meta *map[string]*ClientCon
 			dockerClient: dockerClient,
 		}
 
-		configs[hostUri] = &clientConfig
+		meta.clients[hostUri] = &clientConfig
 		return &clientConfig, err
 	}
 }

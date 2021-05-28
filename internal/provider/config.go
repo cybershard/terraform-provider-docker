@@ -78,7 +78,7 @@ func defaultPooledTransport() *http.Transport {
 // NewClient returns a new Docker client.
 func (c *Config) NewClient() (*client.Client, error) {
 	// If there is no cert information, then check for ssh://
-	helper, err := connhelper.GetConnectionHelperWithSSHOpts(c.Host, []string{"-i", c.PrivateKey})
+	helper, err := connhelper.GetConnectionHelperWithSSHOpts(c.Host, []string{"-i", c.PrivateKey, "-o", "StrictHostKeyChecking=no"})
 	if err != nil {
 		return nil, err
 	}

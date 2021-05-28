@@ -4,10 +4,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -20,11 +18,8 @@ import (
 // Config is the structure that stores the configuration to talk to a
 // Docker API compatible host.
 type Config struct {
-	Host     string
-	Ca       string
-	Cert     string
-	Key      string
-	CertPath string
+	Host       string
+	PrivateKey string
 }
 
 // buildHTTPClientFromBytes builds the http client from bytes (content of the files)
@@ -82,43 +77,8 @@ func defaultPooledTransport() *http.Transport {
 
 // NewClient returns a new Docker client.
 func (c *Config) NewClient() (*client.Client, error) {
-	if c.Cert != "" || c.Key != "" {
-		if c.Cert == "" || c.Key == "" {
-			return nil, fmt.Errorf("cert_material, and key_material must be specified")
-		}
-
-		if c.CertPath != "" {
-			return nil, fmt.Errorf("cert_path must not be specified")
-		}
-
-		httpClient, err := buildHTTPClientFromBytes([]byte(c.Ca), []byte(c.Cert), []byte(c.Key))
-		if err != nil {
-			return nil, err
-		}
-
-		// Note: don't change the order here, because the custom client
-		// needs to be set first them we overwrite the other options: host, version
-		return client.NewClientWithOpts(
-			client.WithHTTPClient(httpClient),
-			client.WithHost(c.Host),
-			client.WithAPIVersionNegotiation(),
-		)
-	}
-
-	if c.CertPath != "" {
-		// If there is cert information, load it and use it.
-		ca := filepath.Join(c.CertPath, "ca.pem")
-		cert := filepath.Join(c.CertPath, "cert.pem")
-		key := filepath.Join(c.CertPath, "key.pem")
-		return client.NewClientWithOpts(
-			client.WithHost(c.Host),
-			client.WithTLSClientConfig(ca, cert, key),
-			client.WithAPIVersionNegotiation(),
-		)
-	}
-
 	// If there is no cert information, then check for ssh://
-	helper, err := connhelper.GetConnectionHelper(c.Host)
+	helper, err := connhelper.GetConnectionHelperWithSSHOpts(c.Host, []string{"-i", c.PrivateKey})
 	if err != nil {
 		return nil, err
 	}

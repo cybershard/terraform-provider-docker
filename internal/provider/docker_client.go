@@ -34,6 +34,7 @@ func getOrCreateDockerClient(d *schema.ResourceData, meta *ProviderConfig) (*Cli
 
 		config := Config{
 			Host: hostUri,
+			PrivateKey: c["private_key"].(string),
 		}
 
 		dockerClient, err := config.NewClient()
@@ -68,19 +69,22 @@ func generateClientSchema() *schema.Schema {
 					DefaultFunc: schema.EnvDefaultFunc("DOCKER_HOST", "unix:///var/run/docker.sock"),
 					Description: "The Docker daemon address",
 				},
+				"private_key": {
+					Type:        schema.TypeString,
+					Required:    true,
+					Description: "Path to the SSH private key",
+				},
 				"registry_address": {
 					Type:        schema.TypeString,
 					Required:    true,
 					Description: "Address of the registry",
 				},
-
 				"registry_username": {
 					Type:        schema.TypeString,
 					Optional:    true,
 					DefaultFunc: schema.EnvDefaultFunc("DOCKER_REGISTRY_USER", ""),
 					Description: "Username for the registry",
 				},
-
 				"registry_password": {
 					Type:        schema.TypeString,
 					Optional:    true,
